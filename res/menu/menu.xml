@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/menu_clearDb"
+          android:title="@string/clear_database" />
+    <item android:id="@+id/menu_printDbToLog"
+            android:title="@string/print_db_to_log"/>
+</menu>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+    <ImageView
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:id="@+id/titleListItemImageView"
+            android:contentDescription="@string/imageContentDescription"
+            android:layout_alignParentLeft="true"/>
+    <TextView
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:id="@+id/titleListItemTextView"
+            android:layout_toRightOf="@+id/titleListItemImageView"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:gravity="center_vertical|left"
+            android:layout_marginLeft="5dp"
+            android:layout_toLeftOf="@+id/titleListItemButton"
+            android:singleLine="true"/>
+    <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/ic_action_content_remove"
+            android:id="@+id/titleListItemButton"
+            android:layout_alignParentRight="true"
+            android:focusable="false"/>
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/dateTimeTextView"
+            android:textStyle="bold"
+            android:layout_alignParentRight="true"
+            android:layout_below="@+id/titleListItemButton"/>
+</RelativeLayout>
