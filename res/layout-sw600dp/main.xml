@@ -9,7 +9,7 @@
     <fragment
             android:id="@+id/titles_fragment"
             android:name="ua.stetsenko.Notepad2.fragments.TitleFragment"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             tools:layout="@layout/title_fragment_layout">
@@ -17,7 +17,7 @@
 
 
     <FrameLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:id="@+id/fragmentContainer">

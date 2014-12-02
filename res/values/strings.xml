@@ -10,13 +10,16 @@
 
     <string name="selectNoteType">New note</string>
     <string name="imageContentDescription">Note type image</string>
+    <string name="imageButtonDescription">Speak Recording Button</string>
     <string name="save">Save &amp; Exit</string>
     <string name="hint_input_text">Input your note</string>
     <string name="clear_database">Clear DB</string>
     <string name="nothing_to_show">Nothing to show</string>
     <string name="print_db_to_log">Print DB</string>
     <string name="imageContainer">Container for image from camera or gallery</string>
-    <string name="addPhoto">Make photo</string>
+    <string name="makePhoto">Make photo</string>
+    <string name="addFromGallery">From Gallery</string>
+    <string name="changeImage">Change image</string>
 
     <string-array name="selectNoteArray">
         <item>Text</item>

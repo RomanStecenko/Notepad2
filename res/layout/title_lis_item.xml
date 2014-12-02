@@ -20,13 +20,13 @@
             android:textSize="20sp"
             android:gravity="center_vertical|left"
             android:layout_marginLeft="5dp"
-            android:layout_toLeftOf="@+id/titleListItemButton"
+            android:layout_toLeftOf="@+id/deleteListItemButton"
             android:singleLine="true"/>
     <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/ic_action_content_remove"
-            android:id="@+id/titleListItemButton"
+            android:id="@+id/deleteListItemButton"
             android:layout_alignParentRight="true"
             android:focusable="false"/>
 
@@ -36,5 +36,5 @@
             android:id="@+id/dateTimeTextView"
             android:textStyle="bold"
             android:layout_alignParentRight="true"
-            android:layout_below="@+id/titleListItemButton"/>
+            android:layout_below="@+id/deleteListItemButton"/>
 </RelativeLayout>

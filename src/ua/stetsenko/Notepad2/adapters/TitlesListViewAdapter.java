@@ -37,7 +37,7 @@ public class TitlesListViewAdapter extends ArrayAdapter<ListItem> {
             holder = new ViewHolder();
             holder.imageView = (ImageView) convertView.findViewById(R.id.titleListItemImageView);
             holder.txtDesc = (TextView) convertView.findViewById(R.id.titleListItemTextView);
-            holder.deleteButton = (Button) convertView.findViewById(R.id.titleListItemButton);
+            holder.deleteButton = (Button) convertView.findViewById(R.id.deleteListItemButton);
             holder.dateTimeTextView = (TextView) convertView.findViewById(R.id.dateTimeTextView);
             convertView.setTag(holder);
         } else
@@ -59,6 +59,7 @@ public class TitlesListViewAdapter extends ArrayAdapter<ListItem> {
                 finalHolder.deleteButton.setVisibility(View.GONE);
                 MainActivity mainActivity = (MainActivity) context;
                 mainActivity.updateDetailFragment();
+//                mainActivity.highlightFirstRowInTitlesFragment();
             }
         });
 

@@ -91,6 +91,7 @@ public class MainActivity extends ActionBarActivity implements TitleFragment.onS
         tf.updateFragment();
     }
 
+
     public void updateDetailFragment() {
         if (isTablet) {
             DetailFragment df = (DetailFragment) getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
@@ -118,17 +119,13 @@ public class MainActivity extends ActionBarActivity implements TitleFragment.onS
 
     @Override
     public void onSelectTypeNote(int position) {
+//        if (isTablet){
+//            TitleFragment tf = (TitleFragment) getSupportFragmentManager().findFragmentById(R.id.titles_fragment);
+//            tf.unhighlightCurrentRow();
+//        }
         switch (position) {
             case Constants.TYPE_TEXT:
-                if (isTablet) {
-                    DetailFragment newNote = DetailFragment.newInstance(db.getNextId(), Constants.TYPE_TEXT);
-                    getSupportFragmentManager().beginTransaction().replace(R.id.fragmentContainer, newNote).commit();
-                } else {
-                    Intent intent = new Intent(this, DetailActivity.class)
-                            .putExtra(Constants.ARG_NOTE_ID, db.getNextId())
-                            .putExtra(Constants.ARG_NOTE_TYPE, Constants.TYPE_TEXT);
-                    startActivity(intent);
-                }
+                addNextNote(Constants.TYPE_TEXT);
                 break;
             case Constants.TYPE_LIST:
                 Toast.makeText(this, "TYPE_LIST " + position, Toast.LENGTH_SHORT).show();
@@ -136,15 +133,7 @@ public class MainActivity extends ActionBarActivity implements TitleFragment.onS
             case Constants.TYPE_PHOTO:
                 //I commented out the checks of camera support to test the emulator
 //                if (isDeviceSupportCamera()){
-                if (isTablet) {
-                    DetailFragment newNote = DetailFragment.newInstance(db.getNextId(), Constants.TYPE_PHOTO);
-                    getSupportFragmentManager().beginTransaction().replace(R.id.fragmentContainer, newNote).commit();
-                } else {
-                    Intent intent = new Intent(this, DetailActivity.class)
-                            .putExtra(Constants.ARG_NOTE_ID, db.getNextId())
-                            .putExtra(Constants.ARG_NOTE_TYPE, Constants.TYPE_PHOTO);
-                    startActivity(intent);
-                }
+                addNextNote(Constants.TYPE_PHOTO);
 //                } else
 //                    Toast.makeText(this, "Device has no camera.", Toast.LENGTH_SHORT).show();
 
@@ -156,10 +145,23 @@ public class MainActivity extends ActionBarActivity implements TitleFragment.onS
                 Toast.makeText(this, "TYPE_DRAWING " + position, Toast.LENGTH_SHORT).show();
                 break;
             case Constants.TYPE_AUDIO:
+                addNextNote(Constants.TYPE_AUDIO);
                 Toast.makeText(this, "TYPE_AUDIO " + position, Toast.LENGTH_SHORT).show();
                 break;
         }
 
+    }
+
+    private void addNextNote(int noteType){
+        if (isTablet) {
+            DetailFragment newNote = DetailFragment.newInstance(db.getNextId(), noteType);
+            getSupportFragmentManager().beginTransaction().replace(R.id.fragmentContainer, newNote).commit();
+        } else {
+            Intent intent = new Intent(this, DetailActivity.class)
+                    .putExtra(Constants.ARG_NOTE_ID, db.getNextId())
+                    .putExtra(Constants.ARG_NOTE_TYPE, noteType);
+            startActivity(intent);
+        }
     }
 
     @Override
@@ -174,19 +176,14 @@ public class MainActivity extends ActionBarActivity implements TitleFragment.onS
         switch (item.getItemId()) {
             case R.id.menu_clearDb:
                 int result = db.deleteAllNotes();
-                Toast.makeText(this, " " + result + " notes is deleted", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, result + " notes is deleted", Toast.LENGTH_SHORT).show();
                 updateTitlesFragment();
                 updateDetailFragment();
                 break;
             case R.id.menu_printDbToLog:
                 db.printToLogAllDatabase();
                 Toast.makeText(this, "db printed in log", Toast.LENGTH_SHORT).show();
-//                if (db.getFirstNote() != null){
-//                   Log.d(Constants.LOG, "first note:\n" + db.getFirstNote().toString() );
-//                } else {
-//                    Log.d(Constants.LOG, "db is empty!");
-//                }
-                Log.d(Constants.LOG, "try get next id: " + db.getNextId());
+                Log.d(Constants.LOG, " next id: " + db.getNextId());
                 break;
         }
         return super.onOptionsItemSelected(item);

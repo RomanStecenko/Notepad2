@@ -12,10 +12,13 @@ public class Constants {
     public static final String IMG_URI = "ImageUri";
 
     public static final String NOTE_DIALOG="noteDialog";
+    public static final String POSITION_TO_HIGHLIGHT = "positionToHighLight";
 
 
     public static final int MEDIA_TYPE_IMAGE = 11;
     public static final int CAMERA_CAPTURE_IMAGE_REQUEST_CODE = 111;
+    public static final int SPEAK_REQUEST_CODE = 112;
+    public static final int IMAGE_FROM_GALLERY_REQUEST_CODE = 113;
 
     //int key type note
     public static final int TYPE_TEXT = 0;// "text";
@@ -39,6 +42,4 @@ public class Constants {
     public static final int NOTE_CONTENT = 2;
     public static final int NOTE_DATE_TIME = 3;
     public static final int NOTE_URI_RESOURCE = 4;
-
-
 }

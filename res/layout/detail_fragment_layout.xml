@@ -1,49 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:orientation="vertical"
+<ScrollView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:id="@+id/mainScrollView">
+
+    <RelativeLayout
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#ffa3becc"
+                    android:id="@+id/detailRelativeLayout">
+
+        <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:id="@+id/detailImageView"
+                android:contentDescription="@string/imageContainer"
+                android:layout_centerInParent="true"
+                android:visibility="invisible"
+                android:scaleType="center"
+                android:layout_gravity="center"
+                android:layout_margin="2dp"/>
+
+        <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/detailEditText"
+                android:layout_above="@+id/buttonContainer"
+                android:layout_below="@+id/detailImageView"
+                android:hint="@string/hint_input_text"
+                android:inputType="textMultiLine"
+                android:background="@null"
+                android:layout_margin="5dp"
+                android:minLines="1"
+                android:gravity="top"
+                android:padding="3dp"/>
+
+
+
+        <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/speakButton"
+                android:layout_alignBottom="@+id/detailEditText"
+                android:layout_alignRight="@+id/detailEditText"
+                android:layout_alignEnd="@+id/detailEditText"
+                android:background="@drawable/ic_action_device_access_mic"
+                android:contentDescription="@string/imageButtonDescription"
+                android:layout_margin="2dp"/>
+
+
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/buttonContainer"
+                android:orientation="horizontal"
+                android:visibility="invisible"
+                android:layout_above="@+id/detailUpdateButton">
+
+            <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/makePhoto"
+                    android:id="@+id/makePhotoButton"
+                    android:layout_weight="1"
+                    />
+
+            <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/addFromGallery"
+                    android:id="@+id/addFromGalleryButton"
+                    android:layout_weight="1"
+                    />
+
+        </LinearLayout>
+
+        <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/save"
+        android:id="@+id/detailUpdateButton"
+        android:layout_alignParentBottom="true"/>
+
+        <TextView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="#ffa3becc">
+                android:id="@+id/detailEmptyTextView"
+                android:visibility="gone"
+                android:gravity="center"
+                android:text="@string/nothing_to_show"/>
 
-    <EditText
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/detailEditText"
-            android:hint="@string/hint_input_text"
-            android:inputType="textMultiLine"
-            android:layout_alignParentTop="true"
-            android:background="@null"
-            android:layout_margin="5dp"
-            android:layout_above="@+id/detailImageView"
-            android:gravity="top"
-            android:minLines="1"/>
+    </RelativeLayout>
 
-    <ImageView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/detailImageView"
-            android:layout_alignParentBottom="true"
-            android:contentDescription="@string/imageContainer"
-            android:layout_centerInParent="true"/>
+</ScrollView>
 
-    <Button
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/addPhoto"
-            android:id="@+id/addPhotoButton"
-            android:visibility="gone"
-            android:layout_alignParentBottom="true"/>
-
-
-
-    <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:id="@+id/detailEmptyTextView"
-            android:visibility="gone"
-            android:gravity="center"
-            android:text="@string/nothing_to_show"
-            />
-
-</RelativeLayout>

@@ -17,6 +17,7 @@ public class DetailActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.detail_activity_layout);
 
+
         if (savedInstanceState == null) {
             DetailFragment details = DetailFragment.newInstance(
                     getIntent().getIntExtra(Constants.ARG_NOTE_ID, 0),

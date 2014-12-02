@@ -186,7 +186,7 @@ public class DatabaseHelper extends SQLiteOpenHelper implements BaseColumns {
         int result = -1;
         if (cursor.moveToFirst()) {
             result = cursor.getInt(Constants.NOTE_ID);
-            Log.d(Constants.LOG, "DB getNextId(), last id result: "+result);
+            Log.d(Constants.LOG, "DB, last id result: "+result);
         }
         db.close();
         return result+1;
