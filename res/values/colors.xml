@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="light_green">#ff99cc00</color>
+    <color name="light_green">#ff26f800</color>
     <color name="dark_orange">#ffff8800</color>
     <color name="normal_red">#ffff2239</color>
-    <color name="light_turquoise">#ff1fffd8</color>
-
+    <color name="light_turquoise">#ff1ff4cd</color>
+    <color name="white">#ffffff</color>
 </resources>

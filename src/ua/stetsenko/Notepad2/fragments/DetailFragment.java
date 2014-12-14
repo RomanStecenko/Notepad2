@@ -8,27 +8,31 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.speech.RecognizerIntent;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.*;
 import android.widget.*;
 import ua.stetsenko.Notepad2.Constants;
 import ua.stetsenko.Notepad2.GlobalApplication;
 import ua.stetsenko.Notepad2.R;
+import ua.stetsenko.Notepad2.activities.FullScreenActivity;
 import ua.stetsenko.Notepad2.activities.MainActivity;
 import ua.stetsenko.Notepad2.sqlite.DatabaseHelper;
 import ua.stetsenko.Notepad2.sqlite.Note;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -36,18 +40,21 @@ import java.util.Locale;
 
 public class DetailFragment extends Fragment implements View.OnClickListener {
 
-    private int noteId, noteType;
-    private boolean isTablet;
+    private int noteId, noteType, screenHeight, screenWidth;
+    private boolean isTablet, recordState = true, playState = true;
     private GlobalApplication ga;
-    private EditText et;
-    private LinearLayout buttonContainer;
-    private TextView tv;
-    private ImageView iv;
+    private EditText editText;
+    private LinearLayout buttonContainer, audioButtonContainer;
+    private TextView textView;
+    private ImageView imageView;
     private Uri fileUri; // = Uri.parse("")
     private DatabaseHelper db;
     private Dialog matchTextDialog;
     private ArrayList<String> matchesText;
     private ImageButton speakButton;
+    private MediaRecorder mRecorder = null;
+    private MediaPlayer mPlayer = null;
+    private Button recordButton, playButton;
 
 
     public static DetailFragment newInstance(int noteId, int noteType) {
@@ -72,7 +79,7 @@ public class DetailFragment extends Fragment implements View.OnClickListener {
         if (savedInstanceState == null) {
             noteId = getArguments().getInt(Constants.ARG_NOTE_ID, 0);
             noteType = getArguments().getInt(Constants.ARG_NOTE_TYPE, 0);
-            Log.d(Constants.LOG, "DetailFragment onCreate() savedInstanceState == null, note id: " + noteId + " type note: " + noteType );
+            Log.d(Constants.LOG, "DetailFragment onCreate() savedInstanceState == null, note id: " + noteId + " type note: " + noteType);
         }
 
         if (savedInstanceState != null) {
@@ -82,24 +89,28 @@ public class DetailFragment extends Fragment implements View.OnClickListener {
             Log.d(Constants.LOG, "DetailFragment onCreate() savedInstanceState != null restore uri: " + fileUri + " \n note id: " + noteId + " type note: " + noteType);
         }
 
+        getScreenSize();
     }
 
 
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View detailView = inflater.inflate(R.layout.detail_fragment_layout, container, false);
-        et = (EditText) detailView.findViewById(R.id.detailEditText);
-        if (Build.VERSION.SDK_INT > 10)
-            et.setTextIsSelectable(true);
-//        et.requestFocus();
-        tv = (TextView) detailView.findViewById(R.id.detailEmptyTextView);
-        iv = (ImageView) detailView.findViewById(R.id.detailImageView);
+        editText = (EditText) detailView.findViewById(R.id.detailEditText);
+        textView = (TextView) detailView.findViewById(R.id.detailEmptyTextView);
+        imageView = (ImageView) detailView.findViewById(R.id.detailImageView);
+        imageView.setOnClickListener(this);
         speakButton = (ImageButton) detailView.findViewById(R.id.speakButton);
         speakButton.setOnClickListener(this);
         buttonContainer = (LinearLayout) detailView.findViewById(R.id.buttonContainer);
+        audioButtonContainer = (LinearLayout) detailView.findViewById(R.id.audioButtonContainer);
         (detailView.findViewById(R.id.makePhotoButton)).setOnClickListener(this);
         (detailView.findViewById(R.id.addFromGalleryButton)).setOnClickListener(this);
         (detailView.findViewById(R.id.detailUpdateButton)).setOnClickListener(this);
+        recordButton = (Button) detailView.findViewById(R.id.recordButton);
+        recordButton.setOnClickListener(this);
+        playButton = (Button) detailView.findViewById(R.id.playRecordButton);
+        playButton.setOnClickListener(this);
         setHasOptionsMenu(true);
         return detailView;
     }
@@ -110,13 +121,14 @@ public class DetailFragment extends Fragment implements View.OnClickListener {
         isTablet = (getActivity().findViewById(R.id.fragmentContainer) != null);
         Note note = db.getNote(noteId);
         if (note != null) {
-            et.setText(note.getContent());
-            fileUri = Uri.parse(note.getUriResource());
+            editText.setText(note.getContent());
+            fileUri = Uri.parse(note.getUriResource()); //if need to save uri after rotate make checking here: if (fileUri.toString < 1), or maybe: if (savedInstanceState == null)
             noteType = note.getType();
             Log.d(Constants.LOG, "DetailFragment onActivityCreated() getNote != null, \n" + note.toString());
-            if (noteType == Constants.TYPE_TEXT) {
-                buttonContainer.setVisibility(View.GONE);
-            }
+//            if (noteType == Constants.TYPE_TEXT) {
+//                buttonContainer.setVisibility(View.GONE);
+//                audioButtonContainer.setVisibility(View.GONE);
+//            }
             if (noteType == Constants.TYPE_PHOTO) {
                 if (fileUri.toString().length() < 1) {
                     buttonContainer.setVisibility(View.VISIBLE);
@@ -130,26 +142,32 @@ public class DetailFragment extends Fragment implements View.OnClickListener {
                     Log.d(Constants.LOG, "DetailFragment onActivityCreated() getNote != null, show image from uri: " + fileUri.toString()); //+ "\n uri Scheme: '" + fileUri.getScheme() + "'"
                 }
             }
-        } else {
-            Note newNote = new Note(noteId, noteType, et.getText().toString(), ga.getDateTime(), "");
-            db.addNote(newNote);
-            if (noteType == Constants.TYPE_TEXT) {
-                buttonContainer.setVisibility(View.GONE);
+            if (noteType == Constants.TYPE_AUDIO) {
+                audioButtonContainer.setVisibility(View.VISIBLE);
+                if (fileUri.toString().length() > 0)
+                    recordButton.setText(R.string.startAudioRerecording);
             }
+        } else {
+            Note newNote = new Note(noteId, noteType, editText.getText().toString(), ga.getDateTime(), "");
+            db.addNote(newNote);
             if (noteType == Constants.TYPE_PHOTO) {
                 buttonContainer.setVisibility(View.VISIBLE);
+            }
+            if (noteType == Constants.TYPE_AUDIO) {
+                audioButtonContainer.setVisibility(View.VISIBLE);
             }
             fileUri = Uri.parse("");
             Log.d(Constants.LOG, "DetailFragment onActivityCreated() getNote == null, save new note: " + newNote.toString());
 //            if (isTablet){
 //                ((MainActivity) getActivity()).updateTitlesFragment();
 //            }
+
         }
 //        setFocusOnEditText();
 
 
 //        if (isTablet) {
-//            et.addTextChangedListener(new TextWatcher() {
+//            editText.addTextChangedListener(new TextWatcher() {
 //                @Override
 //                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 //                @Override
@@ -157,18 +175,18 @@ public class DetailFragment extends Fragment implements View.OnClickListener {
 //                @Override
 //                public void afterTextChanged(Editable s) {
 //                    Toast.makeText(getActivity(), "afterTextChanged() start updateNote and updateTitlesFragment ", Toast.LENGTH_SHORT).show();
-//                    Note note = new Note(noteId, noteType, et.getText().toString(), ga.getDateTime(), fileUri.toString());
+//                    Note note = new Note(noteId, noteType, editText.getText().toString(), ga.getDateTime(), fileUri.toString());
 //                    db.updateNote(note);
 //                    Log.d(Constants.LOG, "DetailFragment afterTextChanged() updateNote, Editable s: " + s.toString() + "\n" + note.toString());
 //                    ((MainActivity) getActivity()).updateTitlesFragment();
 //                }
 //            });
-//            et.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+//            editText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
 //                @Override
 //                public void onFocusChange(View v, boolean hasFocus) {
 //                    if (!hasFocus) {
 //                        Toast.makeText(getActivity(), "onFocusChange() lost focus, start updateNote and updateTitlesFragment ", Toast.LENGTH_SHORT).show();
-//                        Note note = new Note(noteId, noteType, et.getText().toString(), ga.getDateTime(), fileUri.toString());
+//                        Note note = new Note(noteId, noteType, editText.getText().toString(), ga.getDateTime(), fileUri.toString());
 //                        db.updateNote(note);
 //                        Log.d(Constants.LOG, "DetailFragment onFocusChange() lost focus updateNote \n" + note.toString());
 //                        ((MainActivity) getActivity()).updateTitlesFragment();
@@ -179,7 +197,7 @@ public class DetailFragment extends Fragment implements View.OnClickListener {
     }
 
 //    public void setFocusOnEditText(){
-//        et.setSelection(et.getText().length());
+//        editText.setSelection(editText.getText().length());
 //    }
 
     @Override
@@ -195,14 +213,7 @@ public class DetailFragment extends Fragment implements View.OnClickListener {
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.detailUpdateButton:
-                Note note = new Note(noteId, noteType, et.getText().toString(), ga.getDateTime(), fileUri.toString());
-                db.updateNote(note);
-                Log.d(Constants.LOG, "DetailFragment onClick() detailUpdateButton restore uri: " + fileUri + " \n note id: " + noteId + " type note: " + noteType + " isTablet: " + isTablet);
-                if (isTablet){
-                    ((MainActivity) getActivity()).updateTitlesFragment();
-                }
-                else
-                    getActivity().finish();
+                updateNote();
                 break;
             case R.id.makePhotoButton:
                 captureImage();
@@ -211,46 +222,88 @@ public class DetailFragment extends Fragment implements View.OnClickListener {
                 getImageFromGallery();
                 break;
             case R.id.speakButton:
-                if (isConnected()) {
-                    Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-                    intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                    try {
-                        startActivityForResult(intent, Constants.SPEAK_REQUEST_CODE);
-                    } catch (ActivityNotFoundException e) {
-                        Toast.makeText(getActivity().getApplicationContext(), "Your device doesn't support Speech to Text", Toast.LENGTH_LONG).show();
-                    }
-
+                startSpeechRecognize();
+                break;
+            case R.id.detailImageView:
+                startActivity(new Intent(getActivity(), FullScreenActivity.class).putExtra(Constants.IMG_URI, fileUri));
+                break;
+            case R.id.recordButton:
+                if (recordState){
+                    fileUri = Uri.parse(getOutputMediaFile(Constants.MEDIA_TYPE_AUDIO).getAbsolutePath());
+                    startRecording();
+//                    onRecord(recordState);
+                    recordState = !recordState;
+                    recordButton.setText(R.string.stopAudioRecording);
+                    playButton.setEnabled(false);
+                    Log.d(Constants.LOG, "DetailFragment onClick recordButton startRecording()  fileUri:" + fileUri + ", note id: " + noteId + ", type note: " + noteType);
                 } else {
-                    Toast.makeText(getActivity().getApplicationContext(), "Please Connect to Internet", Toast.LENGTH_LONG).show();
+                    stopRecording();
+//                    onRecord(recordState);
+                    recordState = !recordState;
+                    recordButton.setText(R.string.startAudioRerecording);
+                    playButton.setEnabled(true);
+                    Log.d(Constants.LOG, "DetailFragment onClick recordButton stopRecording() ");
                 }
+                Toast.makeText(getActivity().getApplicationContext(), "Record button", Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.playRecordButton:
+                if (fileUri.toString().length() > 0){
+                    if (playState){
+                        recordButton.setEnabled(false);
+                        startPlaying();
+                        playButton.setText(R.string.audioPlaybackOff);
+                        playState = !playState;
+                        Log.d(Constants.LOG, "DetailFragment onClick playRecordButton startPlaying()  fileUri:" + fileUri);
+                    } else {
+                        stopPlaying();
+                        playState = !playState;
+                        recordButton.setEnabled(true);
+                        playButton.setText(R.string.audioPlaybackOn);
+                        Log.d(Constants.LOG, "DetailFragment onClick playRecordButton stopPlaying()");
+                    }
+                    Toast.makeText(getActivity().getApplicationContext(), "playback button", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getActivity().getApplicationContext(), "have nothing to play", Toast.LENGTH_SHORT).show();
+                }
+
+
                 break;
         }
-
     }
+
 
     @Override
     public void onResume() {
         super.onResume();
+        editText.clearFocus();
 //        setFocusOnEditText();
     }
 
     @Override
     public void onPause() {
         super.onPause();
+        if (mRecorder != null) {
+            mRecorder.release();
+            mRecorder = null;
+        }
+
+        if (mPlayer != null) {
+            mPlayer.release();
+            mPlayer = null;
+        }
 //        if (!isTablet){
-//        Note note = new Note(noteId, noteType, et.getText().toString(), ga.getDateTime(), fileUri.toString());
+//        Note note = new Note(noteId, noteType, editText.getText().toString(), ga.getDateTime(), fileUri.toString());
 //        db.updateNote(note);
 //        Log.d(Constants.LOG, "DetailFragment onPause() !isTablet updateNote, " + note.toString());
 //        } else {
 //            if (noteType == Constants.TYPE_TEXT) {
-//                if (et.getText().toString().length()<1) {
+//                if (editText.getText().toString().length()<1) {
 //                    db.deleteNote(noteId);
 //                    Log.d(Constants.LOG, "DetailFragment onPause() isTablet TYPE_TEXT getNote deleteNote id: " +noteId);
 //                }
 //            }
 //            if (noteType == Constants.TYPE_PHOTO) {
-//                if (et.getText().toString().length()<1 && iv.getDrawable() == null) {
+//                if (editText.getText().toString().length()<1 && imageView.getDrawable() == null) {
 //                    db.deleteNote(noteId);
 //                    Log.d(Constants.LOG, "DetailFragment onPause() isTablet TYPE_PHOTO getNote deleteNote id: " +noteId);
 //                }
@@ -262,7 +315,7 @@ public class DetailFragment extends Fragment implements View.OnClickListener {
         Note note = db.getFirstNote();
         if (note != null) {
             noteId = note.getId();
-            et.setText(note.getContent());
+            editText.setText(note.getContent());
             noteType = note.getType();
             fileUri = Uri.parse(note.getUriResource());
             Log.d(Constants.LOG, "DetailFragment updateFragment() getNote != null, \n" + note.toString());
@@ -286,6 +339,46 @@ public class DetailFragment extends Fragment implements View.OnClickListener {
             Log.d(Constants.LOG, "DetailFragment updateFragment() note == null");
             hideDetails();
         }
+    }
+
+    private void startPlaying() {
+        mPlayer = new MediaPlayer();
+        try {
+            mPlayer.setDataSource(fileUri.toString());
+            mPlayer.prepare();
+            mPlayer.start();
+        } catch (IOException e) {
+            Log.e(Constants.LOG, "  PLAYING: prepare() failed");
+            Toast.makeText(getActivity().getApplicationContext(), "PLAYING: prepare() failed", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void stopPlaying() {
+        mPlayer.release();
+        mPlayer = null;
+    }
+
+    private void startRecording() {
+        mRecorder = new MediaRecorder();
+        mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        mRecorder.setOutputFile(fileUri.toString());
+        mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+
+        try {
+            mRecorder.prepare();
+        } catch (IOException e) {
+            Log.e(Constants.LOG, " RECORDING: prepare() failed");
+            Toast.makeText(getActivity().getApplicationContext(), "RECORDING: prepare() failed", Toast.LENGTH_SHORT).show();
+        }
+
+        mRecorder.start();
+    }
+
+    private void stopRecording() {
+        mRecorder.stop();
+        mRecorder.release();
+        mRecorder = null;
     }
 
     private void captureImage() {
@@ -342,7 +435,7 @@ public class DetailFragment extends Fragment implements View.OnClickListener {
                     @Override
                     public void onItemClick(AdapterView<?> parent, View view,
                                             int position, long id) {
-                        et.setText(et.getText().toString() + matchesText.get(position));
+                        editText.setText(editText.getText().toString() + matchesText.get(position));
                         matchTextDialog.hide();
                     }
                 });
@@ -359,7 +452,7 @@ public class DetailFragment extends Fragment implements View.OnClickListener {
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        if (noteType == Constants.TYPE_PHOTO){
+        if (noteType == Constants.TYPE_PHOTO) {
             inflater.inflate(R.menu.det_frag_menu, menu);
         }
         super.onCreateOptionsMenu(menu, inflater);
@@ -369,7 +462,7 @@ public class DetailFragment extends Fragment implements View.OnClickListener {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.changeImageView:
-                iv.setVisibility(View.GONE);
+                imageView.setVisibility(View.GONE);
                 buttonContainer.setVisibility(View.VISIBLE);
                 fileUri = Uri.parse("");
                 break;
@@ -378,34 +471,52 @@ public class DetailFragment extends Fragment implements View.OnClickListener {
     }
 
     private void hideDetails() {
-        et.setVisibility(View.GONE);
-        tv.setVisibility(View.VISIBLE);
-        iv.setVisibility(View.GONE);
+        editText.setVisibility(View.GONE);
+        textView.setVisibility(View.VISIBLE);
+        imageView.setVisibility(View.GONE);
         buttonContainer.setVisibility(View.GONE);
         speakButton.setVisibility(View.GONE);
     }
 
-    public boolean isConnected() {
+    private void updateNote(){
+        Note note = new Note(noteId, noteType, editText.getText().toString(), ga.getDateTime(), fileUri.toString());
+        db.updateNote(note); //Log.d(Constants.LOG, "DetailFragment onClick() detailUpdateButton restore uri: " + fileUri + " \n note id: " + noteId + " type note: " + noteType + " isTablet: " + isTablet);
+        if (isTablet) {
+            ((MainActivity) getActivity()).updateTitlesFragment();
+        } else
+            getActivity().finish();
+    }
+
+    private void startSpeechRecognize(){
+        if (isConnected()) {
+            Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            try {
+                startActivityForResult(intent, Constants.SPEAK_REQUEST_CODE);
+            } catch (ActivityNotFoundException e) {
+                Toast.makeText(getActivity().getApplicationContext(), "Your device doesn't support Speech to Text", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(getActivity().getApplicationContext(), "Please Connect to Internet", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private boolean isConnected() {
         ConnectivityManager cm = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo net = cm.getActiveNetworkInfo();
         return net != null && net.isAvailable() && net.isConnected();
     }
 
     private void previewCapturedImage() {
-        iv.setVisibility(View.VISIBLE);
+        imageView.setVisibility(View.VISIBLE);
         buttonContainer.setVisibility(View.GONE);
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        // downsizing image as it throws OutOfMemory Exception for larger images
-        options.inSampleSize = 8;
-        final Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath(), options);
-        iv.setImageBitmap(bitmap);
-//            Log.d(Constants.LOG, "DetailFragment previewCapturedImage() try set img to ImageView, Exception: " + e.toString());
+        imageView.setImageBitmap(decodeFile(fileUri.getPath()));
     }
 
     private void showImageFromGallery(Uri dataUri) {
-        iv.setVisibility(View.VISIBLE);
+        imageView.setVisibility(View.VISIBLE);
         buttonContainer.setVisibility(View.GONE);
-//        Uri selectedImage = data.getData();
         fileUri = dataUri;
         Log.d(Constants.LOG, "DetailFragment showImageFromGallery() uri:" + fileUri);
         String[] filePathColumn = {MediaStore.Images.Media.DATA};
@@ -414,7 +525,7 @@ public class DetailFragment extends Fragment implements View.OnClickListener {
         int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
         String picturePath = cursor.getString(columnIndex);
         cursor.close();
-        iv.setImageBitmap(BitmapFactory.decodeFile(picturePath));
+        imageView.setImageBitmap(decodeFile(picturePath));
     }
 
     private boolean isExternalStorageWritable() {
@@ -449,11 +560,37 @@ public class DetailFragment extends Fragment implements View.OnClickListener {
         File mediaFile;
         if (type == Constants.MEDIA_TYPE_IMAGE) {
             mediaFile = new File(mediaStorageDir.getPath() + File.separator + "IMG_" + timeStamp + ".jpg");
+        } else if (type == Constants.MEDIA_TYPE_AUDIO) {
+            mediaFile = new File(mediaStorageDir.getPath() + File.separator + "AUDIO_" + timeStamp + ".3gp");
         } else {
             return null;
         }
 
         return mediaFile;
+    }
+
+    private void getScreenSize(){
+        DisplayMetrics displaymetrics = new DisplayMetrics();
+        getActivity().getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+        screenHeight = displaymetrics.heightPixels;
+        screenWidth = displaymetrics.widthPixels;
+    }
+
+    private Bitmap decodeFile(String filePath) {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(filePath, options);
+        final int longest = options.outHeight > options.outWidth ? options.outHeight : options.outWidth;
+        int required = screenHeight > screenWidth ? screenHeight/2 : screenWidth/2;
+        int inSampleSize = 1;
+        if (longest > required) {
+            while ((longest / inSampleSize) > required) {
+                inSampleSize *= 2;
+            }
+        }
+        options.inSampleSize = inSampleSize;
+        options.inJustDecodeBounds = false;
+        return BitmapFactory.decodeFile(filePath, options);
     }
 
 }

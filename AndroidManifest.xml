@@ -4,13 +4,15 @@
           android:versionCode="1"
           android:versionName="1.0">
     <uses-sdk android:minSdkVersion="10"
-              android:targetSdkVersion="17"/>
+              android:targetSdkVersion="19"
+            />
 
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    <uses-feature android:name="android.hardware.camera" />
+    <uses-feature android:name="android.hardware.camera"/>
 
     <application android:name=".GlobalApplication"
                  android:label="@string/app_name"
@@ -26,6 +28,10 @@
         <activity android:name=".activities.DetailActivity"
                   android:label="@string/detailActivity"
                   android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
+        </activity>
+        <activity
+                android:name=".activities.FullScreenActivity"
+                android:theme="@style/FullScreenTheme">
         </activity>
     </application>
 </manifest>

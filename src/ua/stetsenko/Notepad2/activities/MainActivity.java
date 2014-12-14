@@ -146,7 +146,7 @@ public class MainActivity extends ActionBarActivity implements TitleFragment.onS
                 break;
             case Constants.TYPE_AUDIO:
                 addNextNote(Constants.TYPE_AUDIO);
-                Toast.makeText(this, "TYPE_AUDIO " + position, Toast.LENGTH_SHORT).show();
+//                Toast.makeText(this, "TYPE_AUDIO " + position, Toast.LENGTH_SHORT).show();
                 break;
         }
 

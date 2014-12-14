@@ -20,6 +20,12 @@
     <string name="makePhoto">Make photo</string>
     <string name="addFromGallery">From Gallery</string>
     <string name="changeImage">Change image</string>
+    <string name="full_screen_image">Full screen image</string>
+    <string name="startAudioRecording">Start record</string>
+    <string name="stopAudioRecording">Stop record</string>
+    <string name="startAudioRerecording">Rerecording</string>
+    <string name="audioPlaybackOn">Play</string>
+    <string name="audioPlaybackOff">Stop</string>
 
     <string-array name="selectNoteArray">
         <item>Text</item>
